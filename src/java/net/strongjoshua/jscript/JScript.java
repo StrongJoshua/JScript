@@ -25,6 +25,7 @@ public class JScript {
 	private BufferedWriter processIn;
 	private BufferedReader processOut;
 	private ExecutorService executor;
+	private boolean pipeToStdout;
 
 	public JScript(File pythonScript) throws InvalidFileException {
 		if (!pythonScript.exists())
@@ -35,6 +36,14 @@ public class JScript {
 		processBuilder = new ProcessBuilder();
 		pScript = pythonScript.getAbsolutePath();
 		initProcessBuilder(null);
+	}
+
+	public void setPipeToStdout (boolean pipeToStdout) {
+		if (pipeToStdout)
+			processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+		else
+			processBuilder.redirectOutput(ProcessBuilder.Redirect.PIPE);
+		this.pipeToStdout = pipeToStdout;
 	}
 
 	/**
@@ -50,19 +59,25 @@ public class JScript {
 	 */
 	public List<String> execute() throws IOException, InterruptedException, PythonException {
 		Process process = processBuilder.start();
-		BufferedReader processOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
+		BufferedReader processOut = null;
+		if (!pipeToStdout)
+			processOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
 		BufferedReader errorStream = new BufferedReader(new InputStreamReader(process.getErrorStream()));
 
 		int exitCode = process.waitFor();
 		if (exitCode != 0)
 			throw new PythonException(exitCode, errorStream);
 
-		List<String> scriptOut = processOut.lines().collect(Collectors.toList());
-
-		processOut.close();
 		errorStream.close();
 
-		return scriptOut;
+		if (processOut != null) {
+			List<String> scriptOut = processOut.lines().collect(Collectors.toList());
+
+			processOut.close();
+
+			return scriptOut;
+		} else
+			return null;
 	}
 
 	public void start () throws AlreadyRunningException, IOException {
@@ -70,7 +85,8 @@ public class JScript {
 			throw new AlreadyRunningException();
 		running = processBuilder.start();
 		processIn = new BufferedWriter(new OutputStreamWriter(running.getOutputStream()));
-		processOut = new BufferedReader(new InputStreamReader(running.getInputStream()));
+		if (!pipeToStdout)
+			processOut = new BufferedReader(new InputStreamReader(running.getInputStream()));
 		executor = Executors.newSingleThreadExecutor();
 	}
 
