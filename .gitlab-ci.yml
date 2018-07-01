@@ -1,7 +1,4 @@
-# This is the Gradle build system for JVM applications
-# https://gradle.org/
-# https://github.com/gradle/gradle
-image: gradle:alpine
+image: java:8-jdk
 
 # Disable the Gradle daemon for Continuous Integration servers as correctness
 # is usually a priority over speed in CI environments. Using a fresh
@@ -12,7 +9,6 @@ variables:
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
-  - RUN apk update && apk add bash
   - apt-get -qq update && apt-get -qq install -y python
   - apt-get -qq update
   - apt-get -qq install -y python python-virtualenv python-pip
