@@ -6,10 +6,10 @@ stages:
   - deploy
 
 before_script:
-  - export GRADLE_USER_HOME=`pwd`/.gradle
   - apt-get -qq update && apt-get -qq install -y python
   - apt-get -qq update
   - apt-get -qq install -y python python-virtualenv python-pip
+  - export GRADLE_USER_HOME=`pwd`/.gradle
 
 cache:
   paths:

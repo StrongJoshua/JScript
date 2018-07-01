@@ -3,4 +3,4 @@
 gradle
 out
 venv
-gradle*
+gradle/
