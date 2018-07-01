@@ -1,1 +1,1 @@
-raise Exception("Some exception")
+raise Exception('Some exception')
