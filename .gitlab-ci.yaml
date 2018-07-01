@@ -1,0 +1,7 @@
+build:
+    script:
+        - gradle build
+
+test:
+    script:
+        - gradle test
