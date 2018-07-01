@@ -1,37 +1,41 @@
 image: java:8-jdk
 
-# Disable the Gradle daemon for Continuous Integration servers as correctness
-# is usually a priority over speed in CI environments. Using a fresh
-# runtime for each build is more reliable since the runtime is completely
-# isolated from any previous builds.
-variables:
-  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+stages:
+  - build
+  - test
+  - deploy
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
   - apt-get -qq update && apt-get -qq install -y python
   - apt-get -qq update
   - apt-get -qq install -y python python-virtualenv python-pip
-  - virtualenv venv
-  - . venv/bin/activate
+
+cache:
+  paths:
+    - .gradle/wrapper
+    - .gradle/caches
 
 build:
   stage: build
-  script: gradle --build-cache assemble
-  cache:
-    key: "$CI_COMMIT_REF_NAME"
-    policy: push
+  script:
+    - ./gradlew assemble
+  artifacts:
     paths:
-      - build
-      - .gradle
-
+      - build/libs/*.jar
+    expire_in: 1 week
+  only:
+    - master
 
 test:
   stage: test
-  script: gradle check
-  cache:
-    key: "$CI_COMMIT_REF_NAME"
-    policy: pull
-    paths:
-      - build
-      - .gradle
+  script:
+    - ./gradlew check
+
+deploy:
+  stage: deploy
+  script:
+    - ./deploy
+
+after_script:
+  - echo "End CI"
