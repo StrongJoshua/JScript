@@ -19,6 +19,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JScriptTest {
@@ -110,5 +111,11 @@ public class JScriptTest {
 		Mockito.doReturn(true).when(noPermissions).exists();
 		Mockito.doReturn(false).when(noPermissions).canExecute();
 		new JScript(noPermissions);
+	}
+
+	@Test public void testPipeToStdout () throws InterruptedException, PythonException, IOException, InvalidFileException {
+		JScript script = new JScript(successScript);
+		script.setPipeToStdout(true);
+		assertNull(script.execute());
 	}
 }
