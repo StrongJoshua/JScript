@@ -9,13 +9,13 @@ before_script:
   - apt-get -qq update && apt-get -qq install -y python
   - apt-get -qq update
   - apt-get -qq install -y python python-virtualenv python-pip
-  - export GRADLE_USER_HOME=`pwd`/.gradle
+  - export GRADLE_USER_HOME=`pwd`/gradle
   - chmod +x ./gradlew
 
 cache:
   paths:
-    - .gradle/wrapper
-    - .gradle/caches
+    - gradle/wrapper
+    - gradle/caches
 
 build:
   stage: build
