@@ -3,9 +3,11 @@ package net.strongjoshua.jscript;
 import net.strongjoshua.jscript.exceptions.InvalidFileException;
 import net.strongjoshua.jscript.exceptions.PythonException;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,7 +19,7 @@ public class JScript {
 		if (!pythonScript.exists())
 			throw new InvalidFileException("Python script file does not exist.");
 		if (!pythonScript.canExecute())
-			throw new InvalidFileException("Python script cannot be executed.");
+			throw new InvalidFileException("Insufficient permissions to execute python script.");
 
 		processBuilder = new ProcessBuilder();
 		pScript = pythonScript.getAbsolutePath();
