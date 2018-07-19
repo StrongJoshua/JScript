@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -53,31 +54,21 @@ public class JScript {
 		initProcessBuilder(arguments.toCommandList());
 	}
 
+	public Map<String, String> getEnvironmentMap () {
+		return processBuilder.environment();
+	}
+
 	/**
 	 * Executes the python script with any previously set arguments. This function blocks until completion.
 	 * @return A list of strings with the python script's output (each line is an entry).
 	 */
-	public List<String> execute() throws IOException, InterruptedException, PythonException {
-		Process process = processBuilder.start();
-		BufferedReader processOut = null;
-		if (!pipeToStdout)
-			processOut = new BufferedReader(new InputStreamReader(process.getInputStream()));
-		BufferedReader errorStream = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-
-		int exitCode = process.waitFor();
-		if (exitCode != 0)
-			throw new PythonException(exitCode, errorStream);
-
-		errorStream.close();
-
-		if (processOut != null) {
-			List<String> scriptOut = processOut.lines().collect(Collectors.toList());
-
-			processOut.close();
-
-			return scriptOut;
-		} else
-			return null;
+	public List<String> execute () throws IOException, PythonException, InterruptedException {
+		try {
+			start();
+			return waitForCompletion();
+		} catch (NoProcessException | AlreadyRunningException e) {
+			throw new IOException("The script could not be run. This error should never happen.");
+		}
 	}
 
 	public void start () throws AlreadyRunningException, IOException {
@@ -124,5 +115,29 @@ public class JScript {
 		if (args != null)
 			commands.addAll(args);
 		processBuilder.command(commands);
+	}
+
+	public List<String> waitForCompletion () throws NoProcessException, InterruptedException, PythonException, IOException {
+		if (running == null || !running.isAlive())
+			throw new NoProcessException();
+		BufferedReader processOut = null;
+		if (!pipeToStdout)
+			processOut = new BufferedReader(new InputStreamReader(running.getInputStream()));
+		BufferedReader errorStream = new BufferedReader(new InputStreamReader(running.getErrorStream()));
+
+		int exitCode = running.waitFor();
+		if (exitCode != 0)
+			throw new PythonException(exitCode, errorStream);
+
+		errorStream.close();
+
+		if (processOut != null) {
+			List<String> scriptOut = processOut.lines().collect(Collectors.toList());
+
+			processOut.close();
+
+			return scriptOut;
+		} else
+			return null;
 	}
 }

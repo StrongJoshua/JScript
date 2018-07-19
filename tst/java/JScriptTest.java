@@ -13,6 +13,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.Socket;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -23,7 +24,7 @@ import static org.junit.Assert.assertNull;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JScriptTest {
-	private File successScript, error, catchArgs, tell, loop;
+	private File successScript, error, catchArgs, tell, loop, serverScript;
 	private ArgumentHash argumentHash;
 
 	@Mock private File noPermissions;
@@ -34,6 +35,7 @@ public class JScriptTest {
 		catchArgs = new File("tst/resources/catch_args.py");
 		tell = new File("tst/resources/tell.py");
 		loop = new File("tst/resources/loop.py");
+		serverScript = new File("tst/resources/server.py");
 
 		argumentHash = new ArgumentHash();
 		argumentHash.set("Key1", "Val1");
@@ -117,5 +119,19 @@ public class JScriptTest {
 		JScript script = new JScript(successScript);
 		script.setPipeToStdout(true);
 		assertNull(script.execute());
+	}
+
+	@Test public void testSocket ()
+		throws InvalidFileException, IOException, AlreadyRunningException, NoProcessException, InterruptedException,
+		PythonException {
+		JScript script = new JScript(serverScript);
+		script.start();
+		Socket socket = new Socket("localhost", 3111);
+		socket.getOutputStream().write(5);
+		List<String> out = script.waitForCompletion();
+		assertEquals(1, out.size());
+		assertEquals(1, out.get(0).getBytes().length);
+		assertEquals((byte)5, out.get(0).getBytes()[0]);
+		socket.close();
 	}
 }
