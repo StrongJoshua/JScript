@@ -24,18 +24,19 @@ import static org.junit.Assert.assertNull;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JScriptTest {
-	private File successScript, error, catchArgs, tell, loop, serverScript;
+	private File success, error, catchArgs, tell, loop, server, environment;
 	private ArgumentHash argumentHash;
 
 	@Mock private File noPermissions;
 
 	@Before public void setup() {
-		successScript = new File("tst/resources/success.py");
+		success = new File("tst/resources/success.py");
 		error = new File("tst/resources/error.py");
 		catchArgs = new File("tst/resources/catch_args.py");
 		tell = new File("tst/resources/tell.py");
 		loop = new File("tst/resources/loop.py");
-		serverScript = new File("tst/resources/server.py");
+		server = new File("tst/resources/server.py");
+		environment = new File("tst/resources/environment.py");
 
 		argumentHash = new ArgumentHash();
 		argumentHash.set("Key1", "Val1");
@@ -44,7 +45,7 @@ public class JScriptTest {
 	}
 
 	@Test public void testSuccess() throws InvalidFileException, InterruptedException, PythonException, IOException {
-		JScript script = new JScript(successScript);
+		JScript script = new JScript(success);
 		List<String> output = script.execute();
 
 		assertEquals(1, output.size());
@@ -116,7 +117,7 @@ public class JScriptTest {
 	}
 
 	@Test public void testPipeToStdout () throws InterruptedException, PythonException, IOException, InvalidFileException {
-		JScript script = new JScript(successScript);
+		JScript script = new JScript(success);
 		script.setPipeToStdout(true);
 		assertNull(script.execute());
 	}
@@ -124,7 +125,7 @@ public class JScriptTest {
 	@Test public void testSocket ()
 		throws InvalidFileException, IOException, AlreadyRunningException, NoProcessException, InterruptedException,
 		PythonException {
-		JScript script = new JScript(serverScript);
+		JScript script = new JScript(server);
 		script.start();
 		Socket socket = new Socket("localhost", 3111);
 		socket.getOutputStream().write(5);
@@ -133,5 +134,15 @@ public class JScriptTest {
 		assertEquals(1, out.get(0).getBytes().length);
 		assertEquals((byte)5, out.get(0).getBytes()[0]);
 		socket.close();
+	}
+
+	@Test public void testEnvironmentVariables ()
+		throws InvalidFileException, PythonException, InterruptedException, IOException {
+		JScript script = new JScript(environment);
+		String env = "This is a test";
+		script.getEnvironmentMap().put("JScript", env);
+		List<String> out = script.execute();
+		assertEquals(1, out.size());
+		assertEquals(env, out.get(0));
 	}
 }
