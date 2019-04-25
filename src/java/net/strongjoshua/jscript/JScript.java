@@ -5,12 +5,7 @@ import net.strongjoshua.jscript.exceptions.InvalidFileException;
 import net.strongjoshua.jscript.exceptions.NoProcessException;
 import net.strongjoshua.jscript.exceptions.PythonException;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -139,5 +134,11 @@ public class JScript {
 			return scriptOut;
 		} else
 			return null;
+	}
+
+	@Override
+	public void finalize() {
+		if (running.isAlive())
+			running.destroyForcibly();
 	}
 }
