@@ -5,33 +5,33 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
-public class ArgumentHash {
-	private HashMap<String, String> arguments;
-
-	public ArgumentHash() {
-		arguments = new HashMap<>();
-	}
-
+/**
+ * A HashMap<String, String> with a utility functions.
+ */
+public class ArgumentHash extends HashMap<String, String> {
+	/**
+	 * Equivalent to {@link #put}.
+	 *
+	 * @param key   Key
+	 * @param value Value
+	 */
 	public void set(String key, String value) {
-		arguments.put(key, value);
+		this.put(key, value);
 	}
 
-	public String get(String key) {
-		return arguments.get(key);
+	/**
+	 * Equivalent to {@link #keySet()}.
+	 *
+	 * @return Keys
+	 */
+	public Set<String> keys() {
+		return this.keySet();
 	}
 
 	public List<String> toCommandList() {
 		List<String> commands = new ArrayList<>();
-		for (String key : arguments.keySet())
-			commands.add("\"" + key + "\"=\"" + arguments.get(key) + "\"");
+		for (String key : this.keySet())
+			commands.add("\"" + key + "\"=\"" + this.get(key) + "\"");
 		return commands;
-	}
-
-	public int size() {
-		return arguments.size();
-	}
-
-	public Set<String> keys() {
-		return arguments.keySet();
 	}
 }

@@ -39,9 +39,9 @@ public class JScriptTest {
 		errorAfterTell = new File("tst/resources/error_after_tell.py");
 
 		argumentHash = new ArgumentHash();
-		argumentHash.set("Key1", "Val1");
-		argumentHash.set("Key2", "Val2");
-		argumentHash.set("Key 3", "Val 3");
+		argumentHash.put("Key1", "Val1");
+		argumentHash.put("Key2", "Val2");
+		argumentHash.put("Key 3", "Val 3");
 	}
 
 	@Test public void testSuccess() throws InvalidFileException, InterruptedException, PythonException, IOException {
@@ -81,6 +81,7 @@ public class JScriptTest {
 
 	@Test public void testRetrievePythonError() throws InvalidFileException, IOException, InterruptedException {
 		JScript script = new JScript(error);
+		script.setCauseInMessage(false);
 		try {
 			script.execute();
 		} catch (PythonException e) {

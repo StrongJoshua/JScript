@@ -34,6 +34,13 @@ public class JScript {
 		initProcessBuilder(null);
 	}
 
+	/**
+	 * Whether to include the Python error output in the exception message when receiving a PythonException.
+	 * If false, the error output can be retrieved from {@link net.strongjoshua.jscript.exceptions.PythonException#errorOutput}.
+	 * True by default.
+	 *
+	 * @param causeInMessage boolean
+	 */
 	public void setCauseInMessage(boolean causeInMessage) {
 		this.causeInMessage = causeInMessage;
 	}
@@ -50,11 +57,17 @@ public class JScript {
 
 	/**
 	 * Sets the arguments the script should be run with. These will persist with every consecutive run.
+	 * @param arguments See {@link net.strongjoshua.jscript.ArgumentHash}.
 	 */
 	public void setArguments(ArgumentHash arguments) {
 		initProcessBuilder(arguments.toCommandList());
 	}
 
+	/**
+	 * Gets the environment map that will be used by the python process.
+	 * Add/change fields in this map to set them for the python process.
+	 * @return The environment variable map to be used by the python script.
+	 */
 	public Map<String, String> getEnvironmentMap () {
 		return processBuilder.environment();
 	}
@@ -72,6 +85,11 @@ public class JScript {
 		}
 	}
 
+	/**
+	 * Starts the python script. This function is used in conjunction with {@link #tell}.
+	 * @throws AlreadyRunningException If you already called {@link #start}.
+	 * @throws IOException If the python process's input/output/error streams cannot be connected to.
+	 */
 	public void start () throws AlreadyRunningException, IOException {
 		if (running != null && running.isAlive())
 			throw new AlreadyRunningException();
@@ -91,7 +109,7 @@ public class JScript {
 	}
 
 	/**
-	 * If there is a running process, submits the given command and returns the outputted response. <strong>All previous outputs are dropped.</strong>
+	 * If there is a running process, submits the given command and returns the outputted response.
 	 *
 	 * @param command The command to send to the process. Use newlines at your own risk.
 	 * @return The <strong><em>full</em></strong> output printed since the last read and
@@ -142,6 +160,14 @@ public class JScript {
 		processBuilder.command(commands);
 	}
 
+	/**
+	 * Blocks until the python process completes.
+	 * @return The output since the last read.
+	 * @throws NoProcessException If you never called {@link #start}.
+	 * @throws InterruptedException If the process gets interrupted.
+	 * @throws PythonException If the exit code of the process is non-zero.
+	 * @throws IOException If the process's streams cannot be connected to.
+	 */
 	public List<String> waitForCompletion () throws NoProcessException, InterruptedException, PythonException, IOException {
 		if (running == null)
 			throw new NoProcessException();
