@@ -19,12 +19,11 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JScriptTest {
-	private File success, error, catchArgs, tell, loop, server, environment;
+	private File success, error, catchArgs, tell, loop, server, environment, errorAfterTell;
 	private ArgumentHash argumentHash;
 
 	@Mock private File noPermissions;
@@ -37,6 +36,7 @@ public class JScriptTest {
 		loop = new File("tst/resources/loop.py");
 		server = new File("tst/resources/server.py");
 		environment = new File("tst/resources/environment.py");
+		errorAfterTell = new File("tst/resources/error_after_tell.py");
 
 		argumentHash = new ArgumentHash();
 		argumentHash.set("Key1", "Val1");
@@ -61,6 +61,24 @@ public class JScriptTest {
 		script.execute();
 	}
 
+	@Test(expected = PythonException.class)
+	public void testPythonErrorWhenTell() throws InvalidFileException, IOException, AlreadyRunningException, PythonException, NoProcessException {
+		JScript script = new JScript(error);
+		script.start();
+		script.tell("");
+	}
+
+	@Test(expected = PythonException.class)
+	public void testErrorAfterTell() throws Throwable {
+		JScript script = new JScript(errorAfterTell);
+		script.start();
+		try {
+			script.tell("test").get();
+		} catch (ExecutionException e) {
+			throw e.getCause();
+		}
+	}
+
 	@Test public void testRetrievePythonError() throws InvalidFileException, IOException, InterruptedException {
 		JScript script = new JScript(error);
 		try {
@@ -83,21 +101,21 @@ public class JScriptTest {
 	}
 
 	@Test public void testTell ()
-		throws InvalidFileException, IOException, AlreadyRunningException, NoProcessException, InterruptedException,
-		ExecutionException {
+			throws InvalidFileException, IOException, AlreadyRunningException, NoProcessException, InterruptedException,
+			ExecutionException, PythonException {
 		JScript script = new JScript(tell);
 		script.start();
 		assertEquals("Test", script.tell("Test").get().toString());
 	}
 
 	@Test(expected = NoProcessException.class) public void testLoop ()
-		throws InvalidFileException, IOException, AlreadyRunningException, NoProcessException, InterruptedException,
-		ExecutionException {
+			throws InvalidFileException, IOException, AlreadyRunningException, NoProcessException, InterruptedException,
+			ExecutionException, PythonException {
 		JScript script = new JScript(loop);
 		script.start();
 		Future hi = script.tell("Hi");
 		Future stop = script.tell("stop");
-		assertEquals("Hi", hi.get().toString());
+		assertTrue(hi.get().toString().endsWith("Hi"));
 		assertEquals("stop", stop.get().toString());
 		Thread.sleep(100);
 		script.tell("This should crash since the script has stopped.");

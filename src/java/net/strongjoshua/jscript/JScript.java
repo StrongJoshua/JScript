@@ -19,9 +19,9 @@ public class JScript {
 	private String pScript;
 	private Process running;
 	private BufferedWriter processIn;
-	private BufferedReader processOut;
+	private BufferedReader processOut, errorStream;
 	private ExecutorService executor;
-	private boolean pipeToStdout;
+	private boolean pipeToStdout, causeInMessage = true;
 
 	public JScript(File pythonScript) throws InvalidFileException {
 		if (!pythonScript.exists())
@@ -34,11 +34,17 @@ public class JScript {
 		initProcessBuilder(null);
 	}
 
+	public void setCauseInMessage(boolean causeInMessage) {
+		this.causeInMessage = causeInMessage;
+	}
+
 	public void setPipeToStdout (boolean pipeToStdout) {
-		if (pipeToStdout)
+		if (pipeToStdout) {
 			processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-		else
+			processOut = null;
+		} else {
 			processBuilder.redirectOutput(ProcessBuilder.Redirect.PIPE);
+		}
 		this.pipeToStdout = pipeToStdout;
 	}
 
@@ -70,36 +76,60 @@ public class JScript {
 		if (running != null && running.isAlive())
 			throw new AlreadyRunningException();
 		running = processBuilder.start();
+		errorStream = new BufferedReader(new InputStreamReader(running.getErrorStream()));
 		processIn = new BufferedWriter(new OutputStreamWriter(running.getOutputStream()));
 		if (!pipeToStdout)
 			processOut = new BufferedReader(new InputStreamReader(running.getInputStream()));
 		executor = Executors.newSingleThreadExecutor();
+		while (true) {
+			try {
+				Thread.sleep(100);
+				break;
+			} catch (InterruptedException e) {
+			}
+		}
 	}
 
 	/**
 	 * If there is a running process, submits the given command and returns the outputted response. <strong>All previous outputs are dropped.</strong>
 	 *
 	 * @param command The command to send to the process. Use newlines at your own risk.
-	 * @return The <strong><em>single line</em></strong> output printed after the command is run.
+	 * @return The <strong><em>full</em></strong> output printed since the last read and
+	 * <strong><em>single line</em></strong> output after the command is run.
 	 * (Multiple lines can't work because we don't know how long the process will print for)
 	 * @throws NoProcessException If there is no process currently running.
 	 */
-	public Future tell (String command) throws NoProcessException {
-		if (running == null || !running.isAlive())
-			throw new NoProcessException();
+	public Future tell(String command) throws NoProcessException, PythonException {
+		if (running == null || !running.isAlive()) {
+			if (running != null && running.exitValue() != 0) {
+				throw new PythonException(running.exitValue(), errorStream, causeInMessage);
+			} else {
+				throw new NoProcessException();
+			}
+		}
 
 		return executor.submit(() -> {
-			try {
-				Thread.sleep(100);
+			String output = "";
+			if (processOut != null) {
 				while (processOut.ready())
-					processOut.readLine();
-				processIn.write(command);
-				processIn.newLine();
-				processIn.flush();
-				return processOut.readLine();
-			} catch (IOException e) {
-				return null;
+					output += processOut.readLine() + "\n";
 			}
+
+			processIn.write(command);
+			processIn.newLine();
+			processIn.flush();
+
+			Thread.sleep(100);
+
+			if (processOut != null) {
+				output = (output.length() > 0 ? output + "\n" : "") + processOut.readLine();
+			}
+
+			if (!running.isAlive() && running.exitValue() != 0) {
+				throw new PythonException(running.exitValue(), errorStream, causeInMessage);
+			}
+
+			return output;
 		});
 	}
 
@@ -113,16 +143,14 @@ public class JScript {
 	}
 
 	public List<String> waitForCompletion () throws NoProcessException, InterruptedException, PythonException, IOException {
-		if (running == null || !running.isAlive())
+		if (running == null)
 			throw new NoProcessException();
-		BufferedReader processOut = null;
-		if (!pipeToStdout)
+		if (processOut == null && !pipeToStdout)
 			processOut = new BufferedReader(new InputStreamReader(running.getInputStream()));
-		BufferedReader errorStream = new BufferedReader(new InputStreamReader(running.getErrorStream()));
 
 		int exitCode = running.waitFor();
 		if (exitCode != 0)
-			throw new PythonException(exitCode, errorStream);
+			throw new PythonException(exitCode, errorStream, causeInMessage);
 
 		errorStream.close();
 

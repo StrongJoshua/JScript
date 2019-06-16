@@ -13,9 +13,12 @@ public class PythonException extends Exception {
 	 */
 	public String errorOutput;
 
-	public PythonException(int code, BufferedReader input) {
-		super("Python script finished with a non-zero exit code " + code);
+	public PythonException(int code, BufferedReader input, boolean causeInMessage) {
+		super("Python script finished with a non-zero exit code " + code +
+				(causeInMessage ? "\n" + input.lines().collect(Collectors.joining("\n")) : ""));
 
-		errorOutput = input.lines().collect(Collectors.joining("\n"));
+		if (!causeInMessage) {
+			errorOutput = input.lines().collect(Collectors.joining("\n"));
+		}
 	}
 }
