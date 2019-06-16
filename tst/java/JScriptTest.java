@@ -1,9 +1,6 @@
 import net.strongjoshua.jscript.ArgumentHash;
 import net.strongjoshua.jscript.JScript;
-import net.strongjoshua.jscript.exceptions.AlreadyRunningException;
-import net.strongjoshua.jscript.exceptions.InvalidFileException;
-import net.strongjoshua.jscript.exceptions.NoProcessException;
-import net.strongjoshua.jscript.exceptions.PythonException;
+import net.strongjoshua.jscript.exceptions.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -163,5 +160,28 @@ public class JScriptTest {
 		List<String> out = script.execute();
 		assertEquals(1, out.size());
 		assertEquals(env, out.get(0));
+	}
+
+	@Test
+	public void testHasFinished() throws InvalidFileException, IOException, AlreadyRunningException, NoProcessException, PythonException, ExecutionException, InterruptedException {
+		JScript script = new JScript(tell);
+		script.start();
+		assertFalse(script.hasFinished());
+		script.tell("bla").get();
+		assertTrue(script.hasFinished());
+	}
+
+	@Test
+	public void testExitValue() throws InvalidFileException, PythonException, InterruptedException, IOException, NoProcessException, StillRunningException {
+		JScript script = new JScript(success);
+		script.execute();
+		assertEquals(0, script.getExitCode());
+	}
+
+	@Test(expected = StillRunningException.class)
+	public void testExitValueNotFinished() throws InvalidFileException, IOException, AlreadyRunningException, NoProcessException, StillRunningException {
+		JScript script = new JScript(tell);
+		script.start();
+		script.getExitCode();
 	}
 }

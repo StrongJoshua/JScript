@@ -1,9 +1,6 @@
 package net.strongjoshua.jscript;
 
-import net.strongjoshua.jscript.exceptions.AlreadyRunningException;
-import net.strongjoshua.jscript.exceptions.InvalidFileException;
-import net.strongjoshua.jscript.exceptions.NoProcessException;
-import net.strongjoshua.jscript.exceptions.PythonException;
+import net.strongjoshua.jscript.exceptions.*;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -188,6 +185,26 @@ public class JScript {
 			return scriptOut;
 		} else
 			return null;
+	}
+
+	public boolean hasFinished() throws NoProcessException {
+		if (running == null) {
+			throw new NoProcessException();
+		}
+
+		return !running.isAlive();
+	}
+
+	public int getExitCode() throws NoProcessException, StillRunningException {
+		if (running == null) {
+			throw new NoProcessException();
+		}
+
+		if (running.isAlive()) {
+			throw new StillRunningException();
+		}
+
+		return running.exitValue();
 	}
 
 	@Override
