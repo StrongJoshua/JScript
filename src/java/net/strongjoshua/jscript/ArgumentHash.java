@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * A HashMap<String, String> with a utility functions.
+ * A String to String HashMap with utility functions.
  */
 public class ArgumentHash extends HashMap<String, String> {
 	/**
